@@ -100,7 +100,36 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
 		<div id="init-lacking">Your browser lacks required capabilities. Please upgrade it or switch to another to continue.</div>
 		<div id="init-loading"><div>Loading&hellip;</div></div>
 	</div>
-	<tw-storydata name="Casement" startnode="1" creator="Twine" creator-version="2.3.5" ifid="86FDAEA6-6D45-4AFF-9EFC-F5B060A02DF6" zoom="1" format="SugarCube" format-version="2.30.0" options="" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css">/*UI Adjustments*/
+	<tw-storydata name="Casement" startnode="1" creator="Twine" creator-version="2.3.5" ifid="6E84E7B7-EF96-4AA0-884A-973385334993" zoom="1" format="SugarCube" format-version="2.30.0" options="" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css">/*Not Casement Specific*/
+
+.heading{
+  font-size: 28pt;
+  font-weight: bold;
+}
+
+.subheading{
+  font-size: 24pt;
+}
+
+.standout{
+  display: block;
+  font-size: 1.2em;
+  max-width: 40em;
+  min-width: 30%;
+  margin: auto;
+}
+
+.justify{
+  text-align: justify;
+}
+
+.center{
+  text-align: center;
+  display: block;
+  margin: auto;
+}
+
+/*UI Adjustments*/
 #story{
   min-height: 400px; /* just a number in case vh isn't available */
   min-height: 90vh;
@@ -122,10 +151,28 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   box-shadow: 2px 2px 5px black;
 }
 
-/*Common*/
+#passages{
+  max-width: 80%;
+}
+
+/*Helpers*/
 
 .hidden{
   display:none;
+}
+
+.highlightItem, .flashItem{
+  background-color: #444;
+  border-color: #eee !important;
+  color: white !important;
+}
+
+.noTransition{
+  transition: unset !important;
+}
+
+.ignoreMouse a{
+  pointer-events: none;
 }
 
 /*Popup Boxes*/
@@ -133,17 +180,20 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   position: fixed;
   height: 40%;
   width: 40%;
-  margin-top: -20%;
-  margin-left: -20%;
-  /*height: 20em;
-  width: 30em;
-  margin-top: -10em;
-  margin-left: -12.5em;
-  max-width: 60%;
-  max-height: 60%;*/
   opacity: .95;
   filter: alpha(opacity=95);  /* Opacity for IE8 and lower */
   zoom: 1; /* Fix for IE7 */
+}
+
+@media screen and (orientation: portrait) {
+  .mainPopupContainer{
+	height: 30% !important;
+	width: 70% !important;
+	top: 30% !important;
+  	left: 15% !important;
+  	right: 10% !important;
+  	bottom: 40% !important;
+  }
 }
 
 .mainTitle{
@@ -153,7 +203,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   height: 1.5em;
   z-index: 1;
   box-sizing: border-box;
-  border: 2px solid black;
+  border: 2px solid silver;
   box-shadow: 2px 2px 5px black;
   background-color: midnightblue;
 }
@@ -174,7 +224,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   right: .5em;
   margin-bottom: -.5em;
   box-sizing: border-box;
-  border: 2px solid black;
+  border: 2px solid silver;
   box-shadow: 2px 2px 5px black;
   padding: 1em .5em;
 }
@@ -185,56 +235,77 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   width: 100%;
   box-sizing: border-box;
   padding: 0 .5em;
+  line-height: 1.25;
 }
 
 .mainPopupContainer.c0{
-  top: 50%;
-  left: 50%;
+  top: 30%;
+  left: 30%;
+  right: 30%;
+  bottom: 30%;
 }
 
 .mainPopupContainer.c1{
-  top: 55%;
-  left: 52%;
+  top: 32%;
+  left: 32%;
+  right: 28%;
+  bottom: 28%;
 }
 
 .mainPopupContainer.c2{
-  top: 60%;
-  left: 54%;
+  top: 34%;
+  left: 34%;
+  right: 26%;
+  bottom: 26%;
 }
 
 .mainPopupContainer.c3{
-  top: 65%;
-  left: 56%;
+  top: 36%;
+  left: 36%;
+  right: 24%;
+  bottom: 24%;
 }
 
 .mainPopupContainer.c4{
-  top: 70%;
-  left: 58%;
+  top: 38%;
+  left: 38%;
+  right: 22%;
+  bottom: 22%;
 }
 
 .mainPopupContainer.c5{
-  top: 75%;
-  left: 60%;
+  top: 40%;
+  left: 40%;
+  right: 30%;
+  bottom: 30%;
 }
 
 .mainPopupContainer.c6{
-  top: 30%;
-  left: 42%;
+  top: 22%;
+  left: 22%;
+  right: 38%;
+  bottom: 38%;
 }
 
 .mainPopupContainer.c7{
-  top: 35%;
-  left: 44%;
+  top: 24%;
+  left: 24%;
+  right: 36%;
+  bottom: 36%;
 }
 
 .mainPopupContainer.c8{
-  top: 40%;
-  left: 46%;
+  top: 26%;
+  left: 26%;
+  right: 34%;
+  bottom: 34%;
 }
 
 .mainPopupContainer.c9{
-  top: 45%;
-  left: 48%;
+  top: 28%;
+  left: 28%;
+  right: 32%;
+  bottom: 32%;
 }
 
 .mainPopupContainer .closeButton{
@@ -247,7 +318,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   z-index: 1;
   box-sizing: border-box;
   box-shadow: 2px -2px 5px black;
-  border: 2px solid black;
+  border: 2px solid silver;
 }
 
 .mainPopupContainer .closeButton a{
@@ -257,10 +328,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   text-align: center;
   top: 50%;
   margin-top: -.5em;
-}
-
-.ignoreMouse a{
-  pointer-events: none;
+  border-bottom: unset;
 }
 
 .invPopupContainer{
@@ -275,6 +343,13 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   zoom: 1; /* Fix for IE7 */
 }
 
+@media screen and (orientation: portrait) {
+  .invPopupContainer{
+	height: 23% !important;
+	width: 60% !important;
+  }
+}
+
 .invPopup{
   position: absolute;
   background-color: midnightblue;
@@ -283,9 +358,10 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   right: .5em;
   bottom: 1.25em;
   box-sizing: border-box;
-  border: 2px solid black;
+  border: 2px solid silver;
   box-shadow: 2px 2px 5px black;
   padding: .5em;
+  line-height: 1.25;
 }
 
 .invTitle{
@@ -295,7 +371,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   height: 1.5em;
   z-index: 1;
   box-sizing: border-box;
-  border: 2px solid black;
+  border: 2px solid silver;
   box-shadow: 2px 2px 5px black;
   background-color: midnightblue;
 }
@@ -315,7 +391,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   height: 1.5em;
   box-sizing: border-box;
   box-shadow: 2px -2px 5px black;
-  border: 2px solid black;
+  border: 2px solid silver;
 }
 
 .invPopupContainer .closeButton a{
@@ -325,6 +401,11 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   text-align: center;
   top: 50%;
   margin-top: -.5em;
+  border-bottom: unset;
+}
+
+.invPopupContainer .closeButton a:hover{
+  border-bottom: unset;
 }
 
 /*Conversations*/
@@ -359,7 +440,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   height: 1.5em;
   z-index: 1;
   box-sizing: border-box;
-  border: 2px solid black;
+  border: 2px solid silver;
   box-shadow: 2px 2px 5px black;
   background-color: midnightblue;
 }
@@ -379,7 +460,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   right: .5em;
   margin-bottom: -.5em;
   box-sizing: border-box;
-  border: 2px solid black;
+  border: 2px solid silver;
   box-shadow: 2px 2px 5px black;
   padding: 1em .5em;
   background-color: midnightblue;
@@ -391,6 +472,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   width: 100%;
   box-sizing: border-box;
   padding: 0 .5em;
+  line-height: 1.5;
 }
 
 #ConvOptions{
@@ -399,7 +481,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   bottom: 0;
   width: 100%;
   box-sizing: border-box;
-  border: 2px solid black;
+  border: 2px solid silver;
   box-shadow: 2px -2px 5px black;
   padding: .5em;
   background-color: midnightblue;
@@ -415,7 +497,9 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
 
 .cOptionLink{
   display: block;
-  padding: .5em 0;
+  margin: .5em 0;
+  width: intrinsic;
+  width: max-content;
 }</style><script role="script" id="twine-user-script" type="text/twine-javascript">/*Setup*/
 
 (function(){
@@ -466,6 +550,10 @@ window.removeInven = function(item, amount = 1){
 		}
 	}
 	State.setVar("$Inventory", inventory);
+	//This needs to be fixed, so clunky!
+	if(State.getVar("$InvenShowing") === item){
+		window.closeInvenPopup();
+	}
 	UIBar.update();
 }
 
@@ -515,7 +603,6 @@ var curTopic;
 
 window.loadConversation = function(convPassage){
 	curConversation = JSON.parse(Story.get(convPassage).text);
-	console.log(curConversation);
 	window.showTopic(curConversation.start);
 	$(convName).html(curConversation.cName);
 	$(convWindow).removeClass("hidden");
@@ -682,9 +769,10 @@ window.displayInvenPopup = function(title, passageName, jumpToTop){
 	
 	var text = $(invenPopup).find('.popupText');
 	setPageElement(text, passageName);
-	//$(text).html(Story.get(passageName).processText());
 	if(title !== ""){
-		$(invenPopup).find('.titleText').html(passageName);
+		window.clearInvHighlight();
+		toggleInvHighlight(title);
+		$(invenPopup).find('.titleText').html(title);
 	}
 	invenShowing = passageName;
 	if(title !== ""){
@@ -702,6 +790,7 @@ window.closeInvenPopup = function(){
 		invenPopup = undefined;
 		invenShowing = "";
 		State.setVar("$InvenShowing", "");
+		window.clearInvHighlight();
 		refreshMainPopup((mainPopups.length - 1).toString());
 	}
 }
@@ -741,13 +830,71 @@ window.globalRefreshPopups = function(){
 
 window.insertText = function(idName, text){
 	setTimeout(function(){
-	var elem = document.querySelector("#" + idName);
+	var elem = document.querySelector(idName);
 	if(elem === null){
 		return;
 	}
 	elem.appendChild(Wikifier.wikifyEval(text));
 	}, 1);
-}</script><tw-passagedata pid="1" name="Untitled Passage" tags="" position="725,200" size="100,100">[[Start|SetupPassage]]</tw-passagedata><tw-passagedata pid="2" name="Popup Widgets" tags="widget" position="50,400" size="100,100">&lt;&lt;widget &quot;MainPopup&quot;&gt;&gt;&lt;&lt;link $args[0]&gt;&gt;&lt;&lt;run window.displayMainPopup($args[1], $args[2])&gt;&gt;&lt;&lt;/link&gt;&gt;&lt;&lt;/widget&gt;&gt;
+}
+
+
+/* Narrative Stuff */
+
+window.FlashInv = function(item){
+	//Opeh the UI bar, and highlight an item.
+	UIBar.unstow();
+	var invItems = $('#menu-story li a');
+	 $(invItems).each(function(){
+		 if($(this).html().indexOf(item) > -1){
+			 var top = $(this).css('top');
+			 $('#menu-story').scrollTop(top);
+			 window.flashHighlight($(this), 3);
+			 return false;
+		 }
+	 });
+}
+
+window.flashHighlight = function(item, amount){
+	$(item).toggleClass('flashItem');
+	if(amount > 0){
+		setTimeout(function (){window.flashHighlight(item, amount - .5);}, 500);
+	}else{
+		$(item).removeClass('flashItem');
+	}
+}
+
+window.toggleInvHighlight = function(item){
+	if(item === "")
+		return;
+	var invItems = $('#menu-story li a');
+	 $(invItems).each(function(){
+		 if($(this).html().indexOf(item) > -1){
+			 $(this).toggleClass('highlightItem');
+			 return false;
+		 }
+	 });
+}
+
+window.persistInvHighlight = function(item){
+	if(item === "")
+		return;
+	var invItems = $('#menu-story li a');
+	 $(invItems).each(function(){
+		 if($(this).html().indexOf(item) > -1){
+			 $(this).addClass('noTransition');
+			 $(this).addClass('highlightItem');
+			 setTimeout(function(){
+				 $(this).removeClass('noTransition');
+			 }, 10);
+			 return false;
+		 }
+	 });
+}
+
+window.clearInvHighlight = function(){
+	$('#menu-story li a').removeClass('highlightItem');
+};</script><tw-passagedata pid="1" name="Untitled Passage" tags="" position="725,200" size="100,100">[[Start|SetupPassage]]</tw-passagedata><tw-passagedata pid="2" name="Popup Widgets" tags="widget" position="50,400" size="100,100">&lt;&lt;widget &quot;MainPopup&quot;&gt;&gt;&lt;&lt;link $args[0]&gt;&gt;&lt;&lt;run window.displayMainPopup($args[1], $args[2])&gt;&gt;&lt;&lt;/link&gt;&gt;&lt;&lt;/widget&gt;&gt;
 
 &lt;&lt;widget &quot;ReplaceMain&quot;&gt;&gt;&lt;&lt;link $args[1]&gt;&gt;&lt;&lt;run window.updateMainPopup($args[0], $args[2], $args[3], $args[4])&gt;&gt;&lt;&lt;/link&gt;&gt;&lt;&lt;/widget&gt;&gt;
 
@@ -755,9 +902,13 @@ window.insertText = function(idName, text){
 
 &lt;&lt;widget &quot;InvPopup&quot;&gt;&gt;&lt;&lt;link $args[0]&gt;&gt;&lt;&lt;run window.displayInvenPopup($args[2], $args[1], true)&gt;&gt;&lt;&lt;/link&gt;&gt;&lt;&lt;/widget&gt;&gt;
 
-&lt;&lt;widget &quot;InvText&quot;&gt;&gt;&lt;&lt;if $InvenShowing eq $args[0]&gt;&gt;&lt;&lt;set _idname to &quot;textCount&quot; + $cCount&gt;&gt;&lt;&lt;print &quot;&lt;span id=&#39;&quot; + _idname + &quot;&#39;&gt;&lt;/span&gt;&quot;&gt;&gt;&lt;&lt;run window.insertText(_idname, $args[1])&gt;&gt;&lt;&lt;set $cCount to $cCount + 1&gt;&gt;&lt;&lt;/if&gt;&gt;&lt;&lt;/widget&gt;&gt;
+&lt;&lt;widget &quot;InvText&quot;&gt;&gt;&lt;&lt;if $InvenShowing eq $args[0]&gt;&gt;&lt;&lt;set _idname to &quot;textCount&quot; + $cCount&gt;&gt;&lt;&lt;print &quot;&lt;span id=&#39;&quot; + _idname + &quot;&#39;&gt;&lt;/span&gt;&quot;&gt;&gt;&lt;&lt;run window.insertText(&#39;#&#39; + _idname, $args[1])&gt;&gt;&lt;&lt;set $cCount to $cCount + 1&gt;&gt;&lt;&lt;/if&gt;&gt;&lt;&lt;/widget&gt;&gt;
 
-&lt;&lt;widget &quot;PopupText&quot;&gt;&gt;&lt;&lt;if $PopupShowing eq $args[0]&gt;&gt;&lt;&lt;set _idname to &quot;textCount&quot; + $cCount&gt;&gt;&lt;&lt;print &quot;&lt;span id=&#39;&quot; + _idname + &quot;&#39;&gt;&lt;/span&gt;&quot;&gt;&gt;&lt;&lt;run window.insertText(_idname, $args[1])&gt;&gt;&lt;&lt;set $cCount to $cCount + 1&gt;&gt;&lt;&lt;/if&gt;&gt;&lt;&lt;/widget&gt;&gt;</tw-passagedata><tw-passagedata pid="3" name="Text1" tags="" position="725,350" size="100,100">!!A Header!
+&lt;&lt;widget &quot;PopupText&quot;&gt;&gt;&lt;&lt;if $PopupShowing eq $args[0]&gt;&gt;&lt;&lt;set _idname to &quot;textCount&quot; + $cCount&gt;&gt;&lt;&lt;print &quot;&lt;span id=&#39;&quot; + _idname + &quot;&#39;&gt;&lt;/span&gt;&quot;&gt;&gt;&lt;&lt;run window.insertText(&#39;#&#39; + _idname, $args[1])&gt;&gt;&lt;&lt;set $cCount to $cCount + 1&gt;&gt;&lt;&lt;/if&gt;&gt;&lt;&lt;/widget&gt;&gt;
+
+&lt;&lt;widget &quot;ReplaceTopText&quot;&gt;&gt;&lt;&lt;set _class to &quot;.c&quot; + $mainPopupTop&gt;&gt;&lt;&lt;replace _class&gt;&gt;&lt;&lt;/replace&gt;&gt;&lt;&lt;run window.insertText(_class, $args[1])&gt;&gt;&lt;&lt;/widget&gt;&gt;
+
+&lt;&lt;widget &quot;TopPopupGoto&quot;&gt;&gt;&lt;&lt;run window.updateMainPopup($mainPopupTop, $args[0], $args[1], true)&gt;&gt;&lt;&lt;/widget&gt;&gt;</tw-passagedata><tw-passagedata pid="3" name="Text1" tags="" position="725,350" size="100,100">!!A Header!
 Here is some text! Here is some text! Here is some text! Here is some text! Here is some text! Here is some text! Here is some text! Here is some text! Hereere is some text! Here is some text! Here is some text! Here is some text! Hereere is some text! Here is some text! Here is some text! Here is some text! Hereere is some text! Here is some text! Here is some text! Here is some text! Hereere is some text! Here is some text! Here is some text! Here is some text! Hereere is some text! Here is some text! Here is some text! Here is some text! Here is some text! Here is some text! Here is some text! Here is some text! Here is some text!
 
 &lt;&lt;TopMain &quot;Click for a popup!&quot; &quot;Text1&quot; true&gt;&gt;
@@ -768,7 +919,8 @@ $mainPopupTop
 &lt;&lt;InvText &quot;Carrot&quot; &quot;A &lt;&lt;TopMain &quot;rabbit&quot; &quot;Hungry Rabbit&quot; true&gt;&gt; appears out of nowhere, attracted by your carrot.&quot;&gt;&gt;
 
 
-[[TraditionalLink]]</tw-passagedata><tw-passagedata pid="4" name="TraditionalLink" tags="" position="725,500" size="100,100">Double-click this passage to edit it.</tw-passagedata><tw-passagedata pid="5" name="PassageReady" tags="" position="50,25" size="100,100">&lt;&lt;run window.closeMainPopups()&gt;&gt;</tw-passagedata><tw-passagedata pid="6" name="StoryMenu" tags="" position="50,900" size="100,100">&lt;&lt;display &quot;InventoryList&quot;&gt;&gt;</tw-passagedata><tw-passagedata pid="7" name="PassageDone" tags="" position="50,150" size="100,100">&lt;&lt;run window.refreshInvenPopup()&gt;&gt;</tw-passagedata><tw-passagedata pid="8" name="Carrot Inven" tags="" position="525,25" size="100,100">A lovely orange carrot.
+[[TraditionalLink]]</tw-passagedata><tw-passagedata pid="4" name="TraditionalLink" tags="" position="725,500" size="100,100">Double-click this passage to edit it.</tw-passagedata><tw-passagedata pid="5" name="PassageReady" tags="" position="50,25" size="100,100">&lt;&lt;run window.closeMainPopups()&gt;&gt;
+&lt;&lt;timed 2ms&gt;&gt;&lt;&lt;run window.persistInvHighlight($InvenShowing)&gt;&gt;&lt;&lt;/timed&gt;&gt;</tw-passagedata><tw-passagedata pid="6" name="StoryMenu" tags="" position="50,900" size="100,100">&lt;&lt;display &quot;InventoryList&quot;&gt;&gt;</tw-passagedata><tw-passagedata pid="7" name="PassageDone" tags="" position="50,150" size="100,100">&lt;&lt;run window.refreshInvenPopup()&gt;&gt;</tw-passagedata><tw-passagedata pid="8" name="Carrot Inven" tags="" position="525,25" size="100,100">A lovely orange carrot.
 
 &lt;&lt;PopupText &#39;Hungry Rabbit Examine&#39; &#39;&lt;&lt;TopMain &quot;Feed the hungry rabbit a carrot?&quot; &quot;Feed&quot; &quot;Feeding the Rabbit&quot;&gt;&gt;&#39;&gt;&gt;</tw-passagedata><tw-passagedata pid="9" name="Hungry Rabbit Examine" tags="" position="875,200" size="100,100">A very hungry rabbit! 
 A very hungry rabbit!
