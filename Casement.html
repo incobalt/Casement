@@ -500,7 +500,7 @@ var saveAs=saveAs||navigator.msSaveBlob&&navigator.msSaveBlob.bind(navigator)||f
   margin: .5em 0;
   width: intrinsic;
   width: max-content;
-}</style><script role="script" id="twine-user-script" type="text/twine-javascript">//Casement Starts Here
+}</style><script role="script" id="twine-user-script" type="text/twine-javascript">//Casement Startes Here
 
 /*Definition*/
 //Defines the Casement object
@@ -533,7 +533,7 @@ var _Inv = Casement.Inventory;
 _Inv.init = function () {
     //initialize a Twine Inventory variable as a blank object
     State.setVar('$Inventory', {});
-
+    State.setVar('$InvenShowing', undefined);
 }
 
 //Call the function at page load
@@ -635,8 +635,6 @@ _Inv.add = function (item, passageName = "", amount = 1) {
     if (index < 0) {
         //if the index is less than zero, push the item onto the stack
         inventory.push(invItem);
-			console.log("new item");
-			console.log(inventory)
     } else {
         //otherwise, add the amount to the existing item
         inventory[index].add(invItem.count);
@@ -676,9 +674,9 @@ _Inv.remove = function (item, amount = 1) {
             inventory.splice(index, 1);
 
             //If we were displaying that item, close the window
-            var invShow = State.getVar("$InvenShowing");
-            if (invShow !== undefined && invShow.is(item)) {
-                window.closeInvenPopup();
+            //var invShow = State.getVar("$InvenShowing");
+            if (this.invWindow !== undefined && this.invWindow.item !== undefined && this.invWindow.item.is(item)) {
+                this.invWindow.close();
             }
         }
     }
@@ -703,8 +701,8 @@ _Inv.hasItems = function (items) {
     return true;
 }
 
-//Casement.Inventory.hasAmount(string item, amount)
-//Casement.Inventory.hasAmount(Casement.Inventory.Item item, amount)
+//Casement.Inventory.hasAmount(string item, int amount)
+//Casement.Inventory.hasAmount(Casement.Inventory.Item item, int amount)
 //Checks to see if the player has at least a number of items
 _Inv.hasAmount = function (item, amount) {
     //get the item in question
@@ -721,7 +719,261 @@ _Inv.hasAmount = function (item, amount) {
     //if we get here, the player has enough!
     return true;
 }
-			 
+
+////Inventory Popups
+
+//Boolean for preventing infinite loops of refreshing popups. Set true while displaying an inventory item and tested in refresh inventory
+_Inv.refreshedWindow = false;
+
+//The HTML prototype for inventory windows.
+//(ADVANCED): Change this if you need your inventory windows structured a little differently.
+_Inv.windowPrototype = "<div class='invPopupContainer'><div class='invTitle'><div class='titleText'></div></div><div class='invPopup'><div class='popupText'></div></div><div class='closeButton'><a onClick='cInv.putAway()'>CLOSE</a></div></div>";
+
+//shownItem is a local reference to the window currently being displayed
+_Inv.invWindow = undefined;
+
+//Object definition for an inventory window.
+_Inv.InvWindow = function (elem, item) {
+    this.passage = item.passage;
+    this.item = item;
+    this.elem = elem;
+    this.text = $(elem).find('.popupText');
+    this.title = $(elem.find('.titleText'));
+
+    this.setItem = function (item) {
+        this.item = item;
+        this.passage = item.passage;
+    }
+
+    //Shortcuts to Inventory Window functions
+    this.refresh = function () { Casement.Inventory.refresh(); }
+    this.close = function () { Casement.Inventory.putAway(); }
+}
+
+_Inv.highlightedItems = [];
+
+//Casement.Inventory.showItem(Casement.Inventory.Item item, bool jumpToTop)
+//Casement.Inventory.showItem(string item, bool jumpToTop, string passageName)
+//Displays the inventory popup window for the item in question.
+//jumpToTop controls if the window resets to the top if it were open (default true, can be omitted)
+_Inv.showItem = function (item, jumpToTop = true, passageName = "") {
+    //refreshedWindow prevents the main popup from refreshing the inventory window when this
+    //function refreshes the main popup window.
+    this.refreshedWindow = true;
+
+    //pull the item from the arguments, if this is the string version, build the item
+    var invItem = item;
+    if (typeof (item) === "string") {
+        invItem = new this.Item(item, passageName, 0);
+    }
+
+    //if there's no window currently, then make a new one
+    if (this.invWindow === undefined) {
+        this.invWindow = new this.InvWindow($(this.windowPrototype), invItem);
+        $("body").append(this.invWindow.elem);
+    } else {
+        //Otherwise, update the window to the current item, but ONLY if the item name isn't ""
+        //This is because refresh functions don't care what items are selected, so they call showItem with ""
+        if (invItem.name !== "") {
+            this.invWindow.setItem(invItem);
+        }
+    }
+
+    //Set the text of the window to the passage. setPageElement formats it through Twine
+    setPageElement(this.invWindow.text, this.invWindow.passage);
+
+    //if this isn't just a refresh (name = ""), then reset the highlight and move it to the new item
+    if (invItem.name !== "") {
+        this.clearHighlight();
+        this.toggleHighlight(invItem);
+        //in this sisutation, also update the title to the new item.
+        $(this.invWindow.title).html(invItem.name);
+    }
+
+    //Refresh the top popup in case the popup reacts to the new item.
+    Casement.Popup.refreshTop();
+
+    //Scroll the window to the top if desired. Mostly for making silent refreshes without snapping the window
+    if (jumpToTop === undefined || jumpToTop == true)
+        text.scrollTop(0);
+
+    //Now that we're done allow the window to be refreshed again.
+    this.refreshedWindow = false;
+}
+
+//Casement.Inventory.putAway()
+//Closes the inventory window and empties the player's selected inventory item.
+_Inv.putAway = function () {
+    //Do nothing if no window is present.
+    if (this.invWindow === undefined)
+        return;
+
+    //Remove the element from the DOM
+    $(this.invWindow.elem).remove();
+
+    //Clear the window variable
+    this.invWindow = undefined;
+
+    //Clear any inventory highlights.
+    this.clearHighlight();
+
+    //Refresh the top popup, in case it referenced the selected item
+    Casement.Popup.refreshTop();
+}
+
+//Casement.Inventory.refresh()
+//Silently refreshes the text of the currently open inventory window (if any)
+_Inv.refresh = function () {
+    //Do nothing if there is no inventory window showing!
+    if (this.invWindow === undefined)
+        return;
+
+    //Set the text of the inventory window to the linked passage.
+    setPageElement(this.invWindow.text, this.invWindow.passage);
+}
+
+////Inventory UI functions
+
+//Casement.Inventory.indicateItem(string item, int length)
+//Casement.Inventory.indicateItem(Casement.Inventory.Item item, int length)
+//Scrolls to an item in the inventory and flashes it periodically over amount seconds
+_Inv.indicateItem = function (item, length = 3) {
+    //if the UIBar is closed, open it.
+    UIBar.unstow();
+
+    //get all the inventory items in the list
+    var invItems = $('#menu-story li a');
+
+    var name = item;
+
+    //grab the name of the item if this is an Inventory.Item
+    if (typeof(item) !== "string")
+        name = item.name;
+
+    //for each inventory item, check to see if it's the one indicated
+    $(invItems).each(function () {
+        //We use indexOf instead of === because inventory items can have a quantity listed as well.
+        if ($(this).html().indexOf(name) > -1) {
+            //Calculate the top position of the item
+            var top = $(this).css('top');
+            //Scroll to the item
+            $('#menu-story').scrollTop(top);
+
+            //call the recursive function to highlight the item
+            Casement.Inventory.flashItem($(this), length);
+
+            //return false stops processing the .each() function
+            return false;
+        }
+    });
+}
+
+//Casement.Inventory.flashItem(element item, int length)
+//Recursively toggles the flashItem class every .5 seconds, runing for length seconds
+//Note: item is a jQuery element. flashItem() could be used on any element, but was designed for items
+_Inv.flashHighlight = function (item, length) {
+    //toggle the flashItem class, adding or removing the highlight
+    $(item).toggleClass('flashItem');
+
+    //as long as length is greater than 0, recurse the function after .5 seconds, reducing length by .5
+    if (length > 0) {
+        setTimeout(function () { window.flashHighlight(item, length - .5); }, 500);
+    } else {
+        //otherwise, remove the highlight class and stop recursing
+        $(item).removeClass('flashItem');
+    }
+}
+
+//Casement.Inventory.toggleHighlight(Casement.Inventory.Item item)
+//Casement.Inventory.toggleHighlight(string item)
+//Adds or removes the highlightItem class to an inventory item element matching the item's name
+_Inv.toggleHighlight = function (item) {
+    //get all the inventory items in the list
+    var invItems = $('#menu-story li a');
+
+    var name = item;
+
+    //grab the name of the item if this is an Inventory.Item
+    if (typeof(item) !== "string")
+        name = item.name;
+
+    //for each inventory item, check to see if it's the one indicated
+    $(invItems).each(function () {
+        //We use indexOf instead of === because inventory items can have a quantity listed as well.
+        if ($(this).html().indexOf(name) > -1) {
+
+            //check to see if this is being toggled on or off
+            if ($(this).hasClass('highlightItem')) {
+                //we're turning it off, so remove from the highlight list
+                if (cInv.highlightedItems.length > 0 && cInv.highlightedItems.indexOf(name) > -1) {
+                    cInv.highlightedItems.remove(name);
+                }
+            } else {
+                //we're turning it on, so add it to the highlight list, if it doesn't already exist
+                if (cInv.highlightedItems.length > 0 && cInv.highlightedItems.indexOf(name) === -1) {
+                    cInv.highlightedItems.push(name);
+                }
+            }
+
+            //toggle the class
+            $(this).toggleClass('highlightItem');
+
+
+            //return false exits the .each() loop
+            return false;
+        }
+    });
+}
+
+//Casement.Inventory.persistHighlight(Casement.Inventory.Item item)
+//Casement.Inventory.persistHighlight(string item)
+//This is a barely working function to persist a highlight on an inventory item across passage changes
+//When a passage changes, the UIBar is rebuilt, which can cause the class to be lost.
+//A better way of doing this should be made. Probably by keeping a list of highlighted items
+//and adding the class when the item is added to the menu list (by directly creating an <a> tag)
+_Inv.persistHighlight = function (item) {
+    //get all the inventory items in the list
+    var invItems = $('#menu-story li a');
+
+    var name = item;
+
+    //grab the name of the item if this is an Inventory.Item
+    if (typeof(item) !== "string")
+        name = item.name;
+
+    //for each inventory item, check to see if it's the one indicated
+    $(invItems).each(function () {
+        //if it's the one, then add noTransition and highlight classes and a timeout to remove the noTransition class
+        if ($(this).html().indexOf(name) > -1) {
+            $(this).addClass('noTransition');
+            $(this).addClass('highlightItem');
+            setTimeout(function () {
+                $(this).removeClass('noTransition');
+            }, 10);
+            return false;
+        }
+    });
+}
+
+//Casement.Inventory.clearHighlight()
+//Removes any inventory highlighting.
+//Note that indicateItem() uses a different class, so this will not affect that effect
+_Inv.clearHighlight = function () {
+    //removes the class from all inventory items that have it
+    $('#menu-story li a').removeClass('highlightItem');
+};
+
+//Casement.Inventory.buildLink(Casement.Inventory.Item item)
+//Builds an inventory link to be printed when building the Story-Menu
+_Inv.buildLink = function (item) {
+    var link = "<a onClick='cInv.showItem(\"" + item.name + "\", true, \"" + item.passage + "\")' ";
+    if (this.highlightedItems.length > 0 && this.highlightedItems.indexOf(item.name) > -1) {
+        link += "class='highlightedItem'";
+    }
+    link += ">" + item.countName() + "</a>";
+    return link;
+}
+
 
 /*Conversations*/
 
@@ -732,76 +984,76 @@ var convOptions;
 var curConversation;
 var curTopic;
 
-	//Init
-(function(){
-	$('body').append("<div id='ConvContainer' class='hidden'><div id='Conversation'><div id='ConvName'><div class='nameText'></div></div><div id='ConvText'><div class='cText'></div></div><div id='ConvOptions'><div class='cOptions'></div></div></div></div>");
-	convWindow = $('#ConvContainer');
-	convName = $(convWindow).find('.nameText');
-	convText = $(convWindow).find('.cText');
-	convOptions = $(convWindow).find('.cOptions');
+//Init
+(function () {
+    $('body').append("<div id='ConvContainer' class='hidden'><div id='Conversation'><div id='ConvName'><div class='nameText'></div></div><div id='ConvText'><div class='cText'></div></div><div id='ConvOptions'><div class='cOptions'></div></div></div></div>");
+    convWindow = $('#ConvContainer');
+    convName = $(convWindow).find('.nameText');
+    convText = $(convWindow).find('.cText');
+    convOptions = $(convWindow).find('.cOptions');
 })();
 
-window.loadConversation = function(convPassage){
-	curConversation = JSON.parse(Story.get(convPassage).text);
-	window.showTopic(curConversation.start);
-	$(convName).html(curConversation.cName);
-	$(convWindow).removeClass("hidden");
+window.loadConversation = function (convPassage) {
+    curConversation = JSON.parse(Story.get(convPassage).text);
+    window.showTopic(curConversation.start);
+    $(convName).html(curConversation.cName);
+    $(convWindow).removeClass("hidden");
 }
 
-window.showTopic = function(topic){
-	curTopic = curConversation[topic];
-	$(convText).html(curTopic.text);
-	$(convOptions).html("");
-	var visitedOptions = State.getVar("$Conversations");
-	for(var i = 0; i < curTopic.options.length; i++){
-		if(curTopic.options[i].once == true){
-			if(visitedOptions.indexOf(curTopic.options[i].id) >= 0){
-				continue;
-			}
-		}
-		$(convOptions).append("<a class='cOptionLink' onClick='window.selectOption(" + i + ")'>" + curTopic.options[i].text + "</a>");
-	}
-	if(curTopic.actions !== null){
-		var actions = curTopic.actions;
-		for(var a = 0; a < actions.length; a++){
-			eval(actions[a]);
-		}
-	}
+window.showTopic = function (topic) {
+    curTopic = curConversation[topic];
+    $(convText).html(curTopic.text);
+    $(convOptions).html("");
+    var visitedOptions = State.getVar("$Conversations");
+    for (var i = 0; i < curTopic.options.length; i++) {
+        if (curTopic.options[i].once == true) {
+            if (visitedOptions.indexOf(curTopic.options[i].id) >= 0) {
+                continue;
+            }
+        }
+        $(convOptions).append("<a class='cOptionLink' onClick='window.selectOption(" + i + ")'>" + curTopic.options[i].text + "</a>");
+    }
+    if (curTopic.actions !== null) {
+        var actions = curTopic.actions;
+        for (var a = 0; a < actions.length; a++) {
+            eval(actions[a]);
+        }
+    }
 }
 
-window.selectOption = function(index){
-	if(curTopic.options[index].once == true){
-		var visitedOptions = State.getVar("$Conversations");
-		if(visitedOptions.indexOf(curTopic.options[index].id) < 0){
-			visitedOptions.push(curTopic.options[index].id);
-			State.setVar("$Conversations", visitedOptions);
-		}
-	}
-	if(curTopic.options[index].target == ""){
-		//Exit passage
-		window.closeConversation();
-		if(curTopic.options[index].actions !== null){
-			var actions = curTopic.options[index].actions;
-			for(var a = 0; a < actions.length; a++){
-				eval(actions[a]);
-			}
-		}
-	}else{
-		if(curTopic.options[index].actions !== null){
-			var actions = curTopic.options[index].actions;
-			for(var a = 0; a < actions.length; a++){
-				eval(actions[a]);
-			}
-		}
-		window.showTopic(curTopic.options[index].target);
-	}
+window.selectOption = function (index) {
+    if (curTopic.options[index].once == true) {
+        var visitedOptions = State.getVar("$Conversations");
+        if (visitedOptions.indexOf(curTopic.options[index].id) < 0) {
+            visitedOptions.push(curTopic.options[index].id);
+            State.setVar("$Conversations", visitedOptions);
+        }
+    }
+    if (curTopic.options[index].target == "") {
+        //Exit passage
+        window.closeConversation();
+        if (curTopic.options[index].actions !== null) {
+            var actions = curTopic.options[index].actions;
+            for (var a = 0; a < actions.length; a++) {
+                eval(actions[a]);
+            }
+        }
+    } else {
+        if (curTopic.options[index].actions !== null) {
+            var actions = curTopic.options[index].actions;
+            for (var a = 0; a < actions.length; a++) {
+                eval(actions[a]);
+            }
+        }
+        window.showTopic(curTopic.options[index].target);
+    }
 }
 
-window.closeConversation = function(){
-	$(convName).html("");
-	$(convText).html("");
-	$(convOptions).html("");
-	$(convWindow).addClass("hidden");
+window.closeConversation = function () {
+    $(convName).html("");
+    $(convText).html("");
+    $(convOptions).html("");
+    $(convWindow).addClass("hidden");
 }
 
 /*Popups*/
@@ -811,232 +1063,136 @@ var invenShowing;
 var refreshedInven = false;
 var refreshedMain = false;
 
-window.pushMainPopup = function(){
-	if(mainPopups.length == 0){
-		$("#story").on("mousedown", window.popMainPopup);
-		$("#story").addClass("ignoreMouse");
-	}
-	var elem = $("<div class='mainPopupContainer'><div class='mainTitle'><div class='titleText'></div></div><div class='mainPopup'><div class='popupText'></div></div><div class='closeButton'><a onClick='window.popMainPopup()'>CLOSE</a></div></div>");
-	var popupIndex = mainPopups.length.toString();
-	elem.css("z-index", popupIndex);
-	elem.addClass("c" + (mainPopups.length % 10).toString());
-	elem.addClass("m" + popupIndex);
-	if(mainPopups.length > 0){
-		$(mainPopups[mainPopups.length - 1]).addClass("ignoreMouse");
-	}
-	$("body").append(elem)
-	mainPopups.push({e:elem, p: ""});
-	State.setVar("$mainPopupTop", popupIndex);
-	return mainPopups[mainPopups.length -1];
-}
-
-window.popMainPopup = function(){
-	if(mainPopups.length == 0)
-		return;
-	var elem = mainPopups.pop();
-	if(elem === undefined)
-		return;
-	elem.e.remove();
-	if(mainPopups.length == 0){
-		$("#story").off("mousedown", window.popMainPopup);
-		$("#story").removeClass("ignoreMouse");
-		State.setVar("$mainPopupTop", -1);
-		State.setVar("$PopupShowing", "");
-		refreshedMain = true;
-		refreshInvenPopup();
-		refreshedMain = false;
-	}else{
-		$(mainPopups[mainPopups.length - 1].e).removeClass("ignoreMouse");
-		State.setVar("$mainPopupTop", mainPopups.length - 1);
-		State.setVar("$PopupShowing", mainPopups[mainPopups.length - 1].p);
-		refreshMainPopup((mainPopups.length - 1).toString());
-		refreshedMain = true;
-		refreshInvenPopup();
-		refreshedMain = false;
-	}
-}
-
-window.displayMainPopup = function(passageName, popupTitle){
-	refreshedMain = true;
-	var elem = window.pushMainPopup();
-	elem.p = passageName;
-	var text = $(elem.e).find('.popupText');
-	$(elem.e).find('.titleText').html(popupTitle);
-	State.setVar("$PopupShowing", passageName);
-	window.refreshInvenPopup();
-	setPageElement(text, passageName);
-	refreshedMain = false;
-}
-
-window.closeMainPopups = function(){
-	if(mainPopups !== undefined && mainPopups.length > 0){
-		while(mainPopups.length > 0){
-			var elem = mainPopups.pop();
-			elem.e.remove();
-		}
-	}
-	State.setVar("$mainPopupTop", -1);
-	$("#story").off("mousedown", window.popMainPopup);
-	$("#story").removeClass("ignoreMouse");
-	State.setVar("$PopupShowing", "");
-	window.refreshInvenPopup();
-}
-
-window.updateMainPopup = function(popup, passageName, popupTitle, jumpToTop){
-	var i = parseInt(popup);
-	if(i >= mainPopups.length || i < 0)
-		return;
-	refreshedMain = true;
-	var text = $(mainPopups[i].e).find('.popupText');
-	if(popupTitle !== ""){
-		$(mainPopups[i].e).find('.titleText').html(popupTitle);
-	}
-	setPageElement(text, passageName);
-	mainPopups[i].p = passageName;
-	State.setVar("$PopupShowing", passageName);
-	window.refreshInvenPopup();
-	if(jumpToTop === undefined || jumpToTop == true)
-		$(text).scrollTop(0);
-	refreshedMain = false;
-}
-
-window.displayInvenPopup = function (title, passageName, jumpToTop) {
-    refreshedInven = true;
-    if (invenPopup === undefined) {
-        invenPopup = $("<div class='invPopupContainer'><div class='invTitle'><div class='titleText'></div></div><div class='invPopup'><div class='popupText'></div></div><div class='closeButton'><a onClick='window.closeInvenPopup()'>CLOSE</a></div></div>");
-        $("body").append(invenPopup)
+window.pushMainPopup = function () {
+    if (mainPopups.length == 0) {
+        $("#story").on("mousedown", window.popMainPopup);
+        $("#story").addClass("ignoreMouse");
     }
-
-    var item = new Casement.Inventory.Item(title, passageName, 0);
-
-    var text = $(invenPopup).find('.popupText');
-    setPageElement(text, item.passage);
-    if (item.name !== "") {
-        window.clearInvHighlight();
-        toggleInvHighlight(item.name);
-        $(invenPopup).find('.titleText').html(item.name);
+    var elem = $("<div class='mainPopupContainer'><div class='mainTitle'><div class='titleText'></div></div><div class='mainPopup'><div class='popupText'></div></div><div class='closeButton'><a onClick='window.popMainPopup()'>CLOSE</a></div></div>");
+    var popupIndex = mainPopups.length.toString();
+    elem.css("z-index", popupIndex);
+    elem.addClass("c" + (mainPopups.length % 10).toString());
+    elem.addClass("m" + popupIndex);
+    if (mainPopups.length > 0) {
+        $(mainPopups[mainPopups.length - 1]).addClass("ignoreMouse");
     }
-    invenShowing = item;
-    if (item.name !== "") {
-        State.setVar("$InvenShowing", item);
+    $("body").append(elem)
+    mainPopups.push({ e: elem, p: "" });
+    State.setVar("$mainPopupTop", popupIndex);
+    return mainPopups[mainPopups.length - 1];
+}
+
+window.popMainPopup = function () {
+    if (mainPopups.length == 0)
+        return;
+    var elem = mainPopups.pop();
+    if (elem === undefined)
+        return;
+    elem.e.remove();
+    if (mainPopups.length == 0) {
+        $("#story").off("mousedown", window.popMainPopup);
+        $("#story").removeClass("ignoreMouse");
+        State.setVar("$mainPopupTop", -1);
+        State.setVar("$PopupShowing", "");
+        refreshedMain = true;
+        Casement.Inventory.refresh();
+        refreshedMain = false;
+    } else {
+        $(mainPopups[mainPopups.length - 1].e).removeClass("ignoreMouse");
+        State.setVar("$mainPopupTop", mainPopups.length - 1);
+        State.setVar("$PopupShowing", mainPopups[mainPopups.length - 1].p);
+        refreshMainPopup((mainPopups.length - 1).toString());
+        refreshedMain = true;
+        Casement.Inventory.refresh();
+        refreshedMain = false;
     }
-    refreshMainPopup((mainPopups.length - 1).toString());
+}
+
+window.displayMainPopup = function (passageName, popupTitle) {
+    refreshedMain = true;
+    var elem = window.pushMainPopup();
+    elem.p = passageName;
+    var text = $(elem.e).find('.popupText');
+    $(elem.e).find('.titleText').html(popupTitle);
+    State.setVar("$PopupShowing", passageName);
+    Casement.Inventory.refresh();
+    setPageElement(text, passageName);
+    refreshedMain = false;
+}
+
+window.closeMainPopups = function () {
+    if (mainPopups !== undefined && mainPopups.length > 0) {
+        while (mainPopups.length > 0) {
+            var elem = mainPopups.pop();
+            elem.e.remove();
+        }
+    }
+    State.setVar("$mainPopupTop", -1);
+    $("#story").off("mousedown", window.popMainPopup);
+    $("#story").removeClass("ignoreMouse");
+    State.setVar("$PopupShowing", "");
+    Casement.Inventory.refresh();
+}
+
+window.updateMainPopup = function (popup, passageName, popupTitle, jumpToTop) {
+    var i = parseInt(popup);
+    if (i >= mainPopups.length || i < 0)
+        return;
+    refreshedMain = true;
+    var text = $(mainPopups[i].e).find('.popupText');
+    if (popupTitle !== "") {
+        $(mainPopups[i].e).find('.titleText').html(popupTitle);
+    }
+    setPageElement(text, passageName);
+    mainPopups[i].p = passageName;
+    State.setVar("$PopupShowing", passageName);
+    Casement.Inventory.refresh();
     if (jumpToTop === undefined || jumpToTop == true)
-        text.scrollTop(0);
-    refreshedInven = false;
+        $(text).scrollTop(0);
+    refreshedMain = false;
 }
 
-window.closeInvenPopup = function(){
-	if(invenPopup !== undefined){
-		invenPopup.remove();
-		invenPopup = undefined;
-		invenShowing = "";
-		State.setVar("$InvenShowing", undefined);
-		window.clearInvHighlight();
-		refreshMainPopup((mainPopups.length - 1).toString());
-	}
-}
-
-window.refreshMainPopup = function(popup){
-	var i = parseInt(popup);
-	if(i >= mainPopups.length || i < 0)
-		return;
-	if(refreshedMain == true){
-		return;
-	}
-	window.updateMainPopup(popup, mainPopups[i].p, "", false);
-}
-
-window.refreshInvenPopup = function () {
-    if (invenPopup === undefined)
+window.refreshMainPopup = function (popup) {
+    var i = parseInt(popup);
+    if (i >= mainPopups.length || i < 0)
         return;
-    if (refreshedInven == true) {
+    if (refreshedMain == true) {
         return;
     }
-    window.displayInvenPopup("", invenShowing.passage, false);
+    window.updateMainPopup(popup, mainPopups[i].p, "", false);
 }
 
-window.refreshAllMain = function(){
-	for(var i = 0; i < mainPopups.length; i++){
-		window.updateMainPopup(i.toString(), mainPopups[i].p, "", false);
-	}
-}
-
-window.globalRefreshPopups = function(){
-	window.refreshAllMain();
-	window.refreshInvenPopup();
+window.refreshAllMain = function () {
+    for (var i = 0; i < mainPopups.length; i++) {
+        window.updateMainPopup(i.toString(), mainPopups[i].p, "", false);
+    }
 }
 
 
 /* Helpers */
 
-window.insertText = function(idName, text){
-	setTimeout(function(){
-	var elem = document.querySelector(idName);
-	if(elem === null){
-		return;
-	}
-	elem.appendChild(Wikifier.wikifyEval(text));
-	}, 1);
+window.insertText = function (idName, text) {
+    setTimeout(function () {
+        var elem = document.querySelector(idName);
+        if (elem === null) {
+            return;
+        }
+        elem.appendChild(Wikifier.wikifyEval(text));
+    }, 1);
+}
+
+window.globalRefreshPopups = function () {
+    window.refreshAllMain();
+    Casement.Inventory.refresh();
 }
 
 
-/* Narrative Stuff */
 
-window.FlashInv = function(item){
-	//Opeh the UI bar, and highlight an item.
-	UIBar.unstow();
-	var invItems = $('#menu-story li a');
-	 $(invItems).each(function(){
-		 if($(this).html().indexOf(item) > -1){
-			 var top = $(this).css('top');
-			 $('#menu-story').scrollTop(top);
-			 window.flashHighlight($(this), 3);
-			 return false;
-		 }
-	 });
-}
+/*Not Part of Casement*/
 
-window.flashHighlight = function(item, amount){
-	$(item).toggleClass('flashItem');
-	if(amount > 0){
-		setTimeout(function (){window.flashHighlight(item, amount - .5);}, 500);
-	}else{
-		$(item).removeClass('flashItem');
-	}
-}
-
-window.toggleInvHighlight = function(item){
-	if(item === "")
-		return;
-	var invItems = $('#menu-story li a');
-	 $(invItems).each(function(){
-		 if($(this).html().indexOf(item) > -1){
-			 $(this).toggleClass('highlightItem');
-			 return false;
-		 }
-	 });
-}
-
-window.persistInvHighlight = function(item){
-	if(item === "")
-		return;
-	var invItems = $('#menu-story li a');
-	 $(invItems).each(function(){
-		 if($(this).html().indexOf(item) > -1){
-			 $(this).addClass('noTransition');
-			 $(this).addClass('highlightItem');
-			 setTimeout(function(){
-				 $(this).removeClass('noTransition');
-			 }, 10);
-			 return false;
-		 }
-	 });
-}
-
-window.clearInvHighlight = function(){
-	$('#menu-story li a').removeClass('highlightItem');
-};</script><tw-passagedata pid="1" name="Untitled Passage" tags="" position="725,200" size="100,100">[[Start|SetupPassage]]
+//Disallow history controls
+//History controls aren't guaranteed to work properly without robust testing.
+Config.history.controls = false;</script><tw-passagedata pid="1" name="Untitled Passage" tags="" position="725,200" size="100,100">[[Start|SetupPassage]]
 
 &lt;&lt;print cInv&gt;&gt;</tw-passagedata><tw-passagedata pid="2" name="Popup Widgets" tags="widget" position="50,400" size="100,100">&lt;&lt;widget &quot;MainPopup&quot;&gt;&gt;&lt;&lt;link $args[0]&gt;&gt;&lt;&lt;run window.displayMainPopup($args[1], $args[2])&gt;&gt;&lt;&lt;/link&gt;&gt;&lt;&lt;/widget&gt;&gt;
 
@@ -1064,7 +1220,7 @@ $mainPopupTop
 
 
 [[TraditionalLink]]</tw-passagedata><tw-passagedata pid="4" name="TraditionalLink" tags="" position="725,500" size="100,100">Double-click this passage to edit it.</tw-passagedata><tw-passagedata pid="5" name="PassageReady" tags="" position="50,25" size="100,100">&lt;&lt;run window.closeMainPopups()&gt;&gt;
-&lt;&lt;timed 2ms&gt;&gt;&lt;&lt;run window.persistInvHighlight($InvenShowing)&gt;&gt;&lt;&lt;/timed&gt;&gt;</tw-passagedata><tw-passagedata pid="6" name="StoryMenu" tags="" position="50,900" size="100,100">&lt;&lt;display &quot;InventoryList&quot;&gt;&gt;</tw-passagedata><tw-passagedata pid="7" name="PassageDone" tags="" position="50,150" size="100,100">&lt;&lt;run window.refreshInvenPopup()&gt;&gt;</tw-passagedata><tw-passagedata pid="8" name="Carrot Inven" tags="" position="525,25" size="100,100">A lovely orange carrot.
+/*&lt;&lt;timed 2ms&gt;&gt;&lt;&lt;run window.persistInvHighlight($InvenShowing)&gt;&gt;&lt;&lt;/timed&gt;&gt;*/</tw-passagedata><tw-passagedata pid="6" name="StoryMenu" tags="" position="50,900" size="100,100">&lt;&lt;display &quot;InventoryList&quot;&gt;&gt;</tw-passagedata><tw-passagedata pid="7" name="PassageDone" tags="" position="50,150" size="100,100">&lt;&lt;run cInv.refresh()&gt;&gt;</tw-passagedata><tw-passagedata pid="8" name="Carrot Inven" tags="" position="525,25" size="100,100">A lovely orange carrot.
 
 &lt;&lt;PopupText &#39;Hungry Rabbit Examine&#39; &#39;&lt;&lt;TopMain &quot;Feed the hungry rabbit a carrot?&quot; &quot;Feed&quot; &quot;Feeding the Rabbit&quot;&gt;&gt;&#39;&gt;&gt;</tw-passagedata><tw-passagedata pid="9" name="Hungry Rabbit Examine" tags="" position="875,200" size="100,100">A very hungry rabbit! 
 A very hungry rabbit!
@@ -1113,7 +1269,7 @@ A very hungry rabbit!
 &lt;&lt;widget &quot;RemInven&quot;&gt;&gt;&lt;&lt;run cInv.remove($args[0], $args[1])&gt;&gt;&lt;&lt;/widget&gt;&gt;
 &lt;&lt;widget &quot;IncInven&quot;&gt;&gt;&lt;&lt;run cInv.add($args[0], $args[1], 1)&gt;&gt;&lt;&lt;/widget&gt;&gt;
 &lt;&lt;widget &quot;DecInven&quot;&gt;&gt;&lt;&lt;run cInv.remove($args[0], 1)&gt;&gt;&lt;&lt;/widget&gt;&gt;</tw-passagedata><tw-passagedata pid="13" name="InventoryList" tags="nobr" position="50,775" size="100,100">&lt;&lt;for _i to 0; _i lt $Inventory.length; _i++&gt;&gt;&lt;&lt;set $temp_name to $Inventory[_i].countName()&gt;&gt;
-&lt;&lt;InvPopup $temp_name $Inventory[_i].passage $Inventory[_i].name&gt;&gt;
+&lt;&lt;print cInv.buildLink($Inventory[_i])&gt;&gt;
 &lt;&lt;/for&gt;&gt;</tw-passagedata><tw-passagedata pid="14" name="Start" tags="" position="525,550" size="100,100">&lt;&lt;for _i to 0; _i lt $Inventory.length; _i++&gt;&gt;
 &lt;&lt;- window.itemListText($Inventory[_i])&gt;&gt;: &lt;&lt;- $Inventory[_i].name&gt;&gt;
 &lt;&lt;/for&gt;&gt;
